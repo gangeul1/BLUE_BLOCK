@@ -1,8 +1,10 @@
 import os
 import pygame
 import map_reading
+import text_print
 
 pygame.init()
+pygame.font.init()
 
 script_dir = os.path.dirname(__file__)
 
@@ -159,6 +161,7 @@ def jump(block):
 def summon_block(x_lot, y_lot):
     global block_count
     block_count += 1
+    print (block_count)
     globals()[f"block{block_count}"] = Unit(block_image,x_lot,y_lot)
 
 def summon_enemy(x_lot, y_lot):
@@ -167,9 +170,43 @@ def summon_enemy(x_lot, y_lot):
     globals()[f"enemy{enemy_count}"] = Unit(enemy_image,x_lot,y_lot)
     
 def dead():
-    global running
-    running = False
+    global game_over,death_count
+    death_count += 1
+    game_over = True
 
+def restart():
+    global dt , running , Jump , Dash , PlayerXto, jump_power , \
+        game_start_count , xspeed, jump_power_set, able_jump,\
+        re_block_count, re_enemy_count
+    if game_start_count < game_over_count:
+        PlayerXto = 0
+        xspeed = 0
+        player.x_lot = 325
+        player.y_lot = 400
+        Jump = False
+        jump_power = 0
+        jump_power_set =80
+        able_jump = False
+        game_start_count = game_over_count
+        re_block_count = 0
+        re_enemy_count = 0
+    for line in range(map_reading.line_count):
+        for char in range(map_reading.count_line[line]):
+            map_line = map_reading.whole_line[line]
+            map_char = map_line[char]
+            if map_char == '_':
+                pass
+            elif map_char == 'b':
+                if re_block_count < block_count:
+                    re_block_count += 1
+                    print(re_block_count)
+                    globals()[f"block{re_block_count}"].x_lot = -500 + char * 50
+                    globals()[f"block{re_block_count}"].y_lot = line * 50
+            elif map_char == 'e':
+                if re_enemy_count < enemy_count:
+                    re_enemy_count += 1
+                    globals()[f"enemy{re_enemy_count}"].x_lot = -500 + char * 50
+                    globals()[f"enemy{re_enemy_count}"].y_lot = line * 50
 
 
 #################################################################################################   
@@ -177,14 +214,12 @@ def dead():
 
 
 player = Unit(player_image,0,0)
-player.x_lot = 325
-player.y_lot = 400
 enemy = Unit(enemy_image,0,0)
 block = Unit(block_image,0,0)
-PlayerXto = 0
-PlayerYto = 0
-xspeed = 0
 
+death_count = 0
+game_over_count = 0
+game_start_count = -1
 
 speed = 0.5
 Gravity = 1.5
@@ -193,13 +228,11 @@ gravity = Gravity
 enemy_count = 0
 block_count = 0
 
-Jump = False
-jump_power = 0
-jump_power_set =80
-able_jump = False
+
+
+
 
 #################################################################################################
-
 for line in range(map_reading.line_count):
     for char in range(map_reading.count_line[line]):
         map_line = map_reading.whole_line[line]
@@ -216,8 +249,12 @@ for line in range(map_reading.line_count):
 
 ################################################################################################
 running = True
+game_over = False
 
-while running:
+
+def main():
+    restart()
+    global dt, running, PlayerXto, Jump , Dash, jump_power, right_pressed, left_pressed
     dt = clock.tick(120)
     for i in range(1,block_count+1):
         player.cant_pass(globals()[f"block{i}"])
@@ -230,19 +267,23 @@ while running:
             if event.key == pygame.K_DOWN:
                 Dash = True
             if event.key == pygame.K_RIGHT:
+                right_pressed = True
                 PlayerXto += 1
             if event.key == pygame.K_LEFT:
                 PlayerXto -= 1
+                left_pressed = True
 
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_UP:
                 Jump = False
             if event.key == pygame.K_DOWN:
                 Dash = False
-            if event.key == pygame.K_RIGHT:
+            if event.key == pygame.K_RIGHT and right_pressed == True:
                 PlayerXto -= 1
-            if event.key == pygame.K_LEFT:
+                right_pressed = False
+            if event.key == pygame.K_LEFT and left_pressed == True:
                 PlayerXto += 1
+                left_pressed = False
 
 
     for i in range(1,block_count+1):
@@ -268,3 +309,30 @@ while running:
 
 
     pygame.display.flip()
+
+def Game_Over():
+    global running , game_over_repeat , game_over_count, game_over
+    if death_count > game_over_count:
+        game_over_repeat = pygame.time.get_ticks()
+        game_over_count = death_count
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            game_over = False
+            print (game_over == True)
+    pygame.draw.rect(screen, BLACK, [0,0, screen_width,screen_height])
+    if pygame.time.get_ticks() - game_over_repeat < 500:
+        text_print.text_printing("         GAME OVER\n\n\npress any key to restart",50,350,WHITE)
+        pygame.display.flip()
+    elif pygame.time.get_ticks() - game_over_repeat < 1000:
+        text_print.text_printing("         GAME OVER",50,350,WHITE)
+        pygame.display.flip()
+    else:
+        game_over_repeat = pygame.time.get_ticks()
+
+while running == True:
+    if game_over == False:
+        main()
+    if game_over == True:
+        Game_Over()
