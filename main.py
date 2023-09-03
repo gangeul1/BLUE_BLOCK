@@ -177,8 +177,10 @@ def dead():
 def restart():
     global dt , running , Jump , Dash , PlayerXto, jump_power , \
         game_start_count , xspeed, jump_power_set, able_jump,\
-        re_block_count, re_enemy_count
+        re_block_count, re_enemy_count, right_pressed, left_pressed
     if game_start_count < game_over_count:
+        right_pressed = False
+        left_pressed =  False
         PlayerXto = 0
         xspeed = 0
         player.x_lot = 325
@@ -207,6 +209,14 @@ def restart():
                     re_enemy_count += 1
                     globals()[f"enemy{re_enemy_count}"].x_lot = -500 + char * 50
                     globals()[f"enemy{re_enemy_count}"].y_lot = line * 50
+def x_move(right_pressed, left_pressed):
+    global PlayerXto
+    if right_pressed == left_pressed:
+        PlayerXto = 0
+    elif right_pressed == True:
+        PlayerXto = 1
+    else:
+        PlayerXto = -1
 
 
 #################################################################################################   
@@ -262,28 +272,29 @@ def main():
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
+            if event.key == pygame.K_UP or event.key == pygame.K_w:
                 Jump = True
-            if event.key == pygame.K_DOWN:
+            if event.key == pygame.K_DOWN or event.key == pygame.K_s:
                 Dash = True
-            if event.key == pygame.K_RIGHT:
+            if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
                 right_pressed = True
-                PlayerXto += 1
-            if event.key == pygame.K_LEFT:
-                PlayerXto -= 1
+            if event.key == pygame.K_LEFT or event.key == pygame.K_a:
                 left_pressed = True
 
         if event.type == pygame.KEYUP:
-            if event.key == pygame.K_UP:
+            if event.key == pygame.K_UP or event.key == pygame.K_w:
                 Jump = False
-            if event.key == pygame.K_DOWN:
+            if event.key == pygame.K_DOWN or event.key == pygame.K_s:
                 Dash = False
-            if event.key == pygame.K_RIGHT and right_pressed == True:
-                PlayerXto -= 1
+            if event.key == pygame.K_RIGHT and right_pressed == True\
+                or event.key == pygame.K_d and right_pressed == True:
                 right_pressed = False
-            if event.key == pygame.K_LEFT and left_pressed == True:
-                PlayerXto += 1
+            if event.key == pygame.K_LEFT and left_pressed == True\
+                or event.key == pygame.K_a and left_pressed == True:
                 left_pressed = False
+        if right_pressed == True:
+            PlayerXto += 1
+        x_move(right_pressed, left_pressed)
 
 
     for i in range(1,block_count+1):
