@@ -15,8 +15,5 @@ for line in lines:
         a_line.append(line[char:char + 1])
     whole_line.append(a_line)
     a_line = []
-print (*whole_line)
-print (*count_line)
-print (line_count)
 
 map_file.close()

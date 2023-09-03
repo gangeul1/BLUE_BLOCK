@@ -204,10 +204,9 @@ for line in range(map_reading.line_count):
     for char in range(map_reading.count_line[line]):
         map_line = map_reading.whole_line[line]
         map_char = map_line[char]
-        if map_char == 'a':
+        if map_char == '_':
             pass
         elif map_char == 'b':
-            print (f"{char * 50,line * 50}")
             summon_block(-500 + char * 50, line * 50)
         elif map_char == 'e':
             summon_enemy(-500 + char * 50, line * 50)
@@ -220,7 +219,6 @@ running = True
 
 while running:
     dt = clock.tick(120)
-
     for i in range(1,block_count+1):
         player.cant_pass(globals()[f"block{i}"])
     for event in pygame.event.get():
