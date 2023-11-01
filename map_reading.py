@@ -1,4 +1,7 @@
-map_file = open("jump_game_map.txt", 'r')
+import os
+script_dir = os.path.dirname(__file__)
+
+map_file = open(f"{script_dir}/jump_game_map.txt", 'r')
 lines = map_file.readlines()
 line_count = 0
 global a_line

@@ -30,13 +30,16 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
 
+Blocks = []
+Enemies = []
+
 
 #################################################################################################
-def scroll_move(xto):
-    for i in range(1,enemy_count+1):
-        globals()[f"enemy{i}"].x_lot -= xspeed * speed * dt
-    for i in range(1,block_count+1):
-        globals()[f"block{i}"].x_lot -= xspeed * speed * dt
+def scroll_move():
+    for enemy in Enemies:
+        enemy.x_lot -= xspeed * speed * dt
+    for block in Blocks:
+        block.x_lot -= xspeed * speed * dt
 
 class Unit:
     def __init__(self,image, x_lot, y_lot):
@@ -124,7 +127,7 @@ class Unit:
             gravity = 0
 
 
-    def move(self,xto,yto):
+    def move(self,xto):
         global xspeed
         if xto == 0:
             xspeed = xspeed * 0.95
@@ -133,15 +136,13 @@ class Unit:
             xspeed = xto
             
         self.x_lot += xspeed * speed * dt
-        self.y_lot += yto * speed * dt
-
 
         if self.x_lot < 300:
             self.x_lot = 300
-            scroll_move(xto)
+            scroll_move()
         if self.x_lot > screen_width - self.width - 300:
             self.x_lot = screen_width - self.width -300
-            scroll_move(xto)
+            scroll_move()
 
         if self.y_lot > screen_height - self.height:
             self.y_lot = screen_height - self.height
@@ -159,16 +160,11 @@ def jump(block):
     
 
 def summon_block(x_lot, y_lot):
-    global block_count
-    block_count += 1
-    print (block_count)
-    globals()[f"block{block_count}"] = Unit(block_image,x_lot,y_lot)
+    Blocks.append(Unit(block_image,x_lot,y_lot))
 
 def summon_enemy(x_lot, y_lot):
-    global enemy_count
-    enemy_count += 1
-    globals()[f"enemy{enemy_count}"] = Unit(enemy_image,x_lot,y_lot)
-    
+    Enemies.append(Unit(enemy_image,x_lot,y_lot))
+
 def dead():
     global game_over,death_count
     death_count += 1
@@ -177,8 +173,10 @@ def dead():
 def restart():
     global dt , running , Jump , Dash , PlayerXto, jump_power , \
         game_start_count , xspeed, jump_power_set, able_jump,\
-        re_block_count, re_enemy_count
+        re_block_count, re_enemy_count, right_pressed, left_pressed
     if game_start_count < game_over_count:
+        right_pressed = False
+        left_pressed =  False
         PlayerXto = 0
         xspeed = 0
         player.x_lot = 325
@@ -197,16 +195,21 @@ def restart():
             if map_char == '_':
                 pass
             elif map_char == 'b':
-                if re_block_count < block_count:
+                if re_block_count < len(Blocks):
+                    Blocks[re_block_count] = (Unit(block_image,-500 + char * 50, line * 50))
                     re_block_count += 1
-                    print(re_block_count)
-                    globals()[f"block{re_block_count}"].x_lot = -500 + char * 50
-                    globals()[f"block{re_block_count}"].y_lot = line * 50
             elif map_char == 'e':
-                if re_enemy_count < enemy_count:
+                if re_enemy_count < len(Enemies):
+                    Enemies[re_enemy_count] = (Unit(enemy_image,-500 + char * 50, line * 50))
                     re_enemy_count += 1
-                    globals()[f"enemy{re_enemy_count}"].x_lot = -500 + char * 50
-                    globals()[f"enemy{re_enemy_count}"].y_lot = line * 50
+def x_move(right_pressed, left_pressed):
+    global PlayerXto
+    if right_pressed == left_pressed:
+        PlayerXto = 0
+    elif right_pressed == True:
+        PlayerXto = 1
+    else:
+        PlayerXto = -1
 
 
 #################################################################################################   
@@ -214,8 +217,6 @@ def restart():
 
 
 player = Unit(player_image,0,0)
-enemy = Unit(enemy_image,0,0)
-block = Unit(block_image,0,0)
 
 death_count = 0
 game_over_count = 0
@@ -224,9 +225,6 @@ game_start_count = -1
 speed = 0.5
 Gravity = 1.5
 gravity = Gravity
-
-enemy_count = 0
-block_count = 0
 
 
 
@@ -256,55 +254,54 @@ def main():
     restart()
     global dt, running, PlayerXto, Jump , Dash, jump_power, right_pressed, left_pressed
     dt = clock.tick(120)
-    for i in range(1,block_count+1):
-        player.cant_pass(globals()[f"block{i}"])
+    for i in Blocks:
+        player.cant_pass(i)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
+            if event.key == pygame.K_UP or event.key == pygame.K_w:
                 Jump = True
-            if event.key == pygame.K_DOWN:
+            if event.key == pygame.K_DOWN or event.key == pygame.K_s:
                 Dash = True
-            if event.key == pygame.K_RIGHT:
+            if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
                 right_pressed = True
-                PlayerXto += 1
-            if event.key == pygame.K_LEFT:
-                PlayerXto -= 1
+            if event.key == pygame.K_LEFT or event.key == pygame.K_a:
                 left_pressed = True
 
         if event.type == pygame.KEYUP:
-            if event.key == pygame.K_UP:
+            if event.key == pygame.K_UP or event.key == pygame.K_w:
                 Jump = False
-            if event.key == pygame.K_DOWN:
+            if event.key == pygame.K_DOWN or event.key == pygame.K_s:
                 Dash = False
-            if event.key == pygame.K_RIGHT and right_pressed == True:
-                PlayerXto -= 1
+            if event.key == pygame.K_RIGHT and right_pressed == True\
+                or event.key == pygame.K_d and right_pressed == True:
                 right_pressed = False
-            if event.key == pygame.K_LEFT and left_pressed == True:
-                PlayerXto += 1
+            if event.key == pygame.K_LEFT and left_pressed == True\
+                or event.key == pygame.K_a and left_pressed == True:
                 left_pressed = False
+        x_move(right_pressed, left_pressed)
 
 
-    for i in range(1,block_count+1):
-        jump(globals()[f"block{i}"])
+    for block in Blocks:
+        jump(block)
     player.y_lot -= jump_power / 10
     jump_power -= gravity
     
-    player.move(PlayerXto,0)
+    player.move(PlayerXto)
 
-    for i in range(1,enemy_count+1):
-        if player.bump(globals()[f"enemy{i}"]) == True:
+    for enemy in Enemies:
+        if player.bump(enemy) == True:
             dead()
     if player.y_lot >= 750:
         dead()
 
     pygame.draw.rect(screen, BLACK, [0,0, screen_width,screen_height])
-    for i in range(1,enemy_count+1):
-        screen.blit(globals()[f"enemy{i}"].image, (globals()[f"enemy{i}"].x_lot, globals()[f"enemy{i}"].y_lot))
-    for i in range(1,block_count+1):
-        player.cant_pass(globals()[f"block{i}"])
-        screen.blit(globals()[f"block{i}"].image, (globals()[f"block{i}"].x_lot, globals()[f"block{i}"].y_lot))
+    for enemy in Enemies:
+        screen.blit(enemy.image,(enemy.x_lot, enemy.y_lot))
+    for block in Blocks:
+        player.cant_pass(block)
+        screen.blit(block.image, (block.x_lot, block.y_lot))
     screen.blit(player.image, (player.x_lot, player.y_lot))
 
 
@@ -323,10 +320,10 @@ def Game_Over():
             print (game_over == True)
     pygame.draw.rect(screen, BLACK, [0,0, screen_width,screen_height])
     if pygame.time.get_ticks() - game_over_repeat < 500:
-        text_print.text_printing("         GAME OVER\n\n\npress any key to restart",50,350,WHITE)
+        text_print.text_printing("         GAME OVER\n\n\npress any key to restart",130,330,WHITE)
         pygame.display.flip()
     elif pygame.time.get_ticks() - game_over_repeat < 1000:
-        text_print.text_printing("         GAME OVER",50,350,WHITE)
+        text_print.text_printing("         GAME OVER",130,330,WHITE)
         pygame.display.flip()
     else:
         game_over_repeat = pygame.time.get_ticks()
