@@ -18,6 +18,7 @@ pygame.display.set_caption("super_mario")
 player_image = f"{script_dir}\images\player.png"
 enemy_image = f"{script_dir}\images\enemy.png"
 block_image = f"{script_dir}\images//block.png"
+savepoint_image = f"{script_dir}\images//savepoint.png"
 
 clock = pygame.time.Clock()
 myFont = pygame.font.SysFont(None, 30)
@@ -32,15 +33,15 @@ YELLOW = (255, 255, 0)
 
 Blocks = []
 Enemies = []
+Savepoints = []
 
 
 #################################################################################################
 def scroll_move():
-    for enemy in Enemies:
-        enemy.x_lot -= xspeed * speed * dt
-    for block in Blocks:
-        block.x_lot -= xspeed * speed * dt
-
+    for lists_name in All_Units:
+        for lists_value in lists_name:
+            for unit in lists_value:
+                unit.x_lot -= xspeed * speed * dt
 class Unit:
     def __init__(self,image, x_lot, y_lot):
         self.image = pygame.image.load(image)
@@ -55,8 +56,8 @@ class Unit:
         self.rect.left = self.x_lot
         self.rect.top = self.y_lot
         bump_unit_rect = bump_unit.image.get_rect()
-        bump_unit_rect.left = bump_unit.x_lot
-        bump_unit_rect.top = bump_unit.y_lot
+        bump_unit_rect.left = bump_unit.x_lot 
+        bump_unit_rect.top = bump_unit.y_lot - 1
 
         if self.rect.colliderect(bump_unit_rect):
             return True
@@ -69,7 +70,7 @@ class Unit:
         self.rect.top = self.y_lot
         bump_unit_rect = bump_unit.image.get_rect()
         bump_unit_rect.left = bump_unit.x_lot
-        bump_unit_rect.top = bump_unit.y_lot
+        bump_unit_rect.top = bump_unit.y_lot - 1
         bump_unit_rect.right = bump_unit_rect.left + bump_unit.width
         bump_unit_rect.bottom = bump_unit.y_lot + bump_unit.height
         is_right = bump_unit_rect.right - player.x_lot
@@ -96,7 +97,7 @@ class Unit:
             if is_top < is_bottom:
                 top_or_bottom = is_top
                 able_jump = True
-                the_y_lot = (bump_unit_rect.top - player.height)  +1
+                the_y_lot = (bump_unit_rect.top - player.height)
             elif is_top > is_bottom:
                 top_or_bottom = is_bottom
                 able_jump = False
@@ -130,7 +131,7 @@ class Unit:
     def move(self,xto):
         global xspeed
         if xto == 0:
-            xspeed = xspeed * 0.95
+            xspeed = xspeed * 0.90
         xspeed += xto * 0.3
         if abs(xto * speed * dt) <= -xspeed* speed * dt and xto != 0 or xspeed* speed * dt >= abs(xto * speed * dt) and xto != 0:
             xspeed = xto
@@ -165,43 +166,44 @@ def summon_block(x_lot, y_lot):
 def summon_enemy(x_lot, y_lot):
     Enemies.append(Unit(enemy_image,x_lot,y_lot))
 
+def summon_savepoint(x_lot,y_lot):
+    Savepoints.append(Unit(savepoint_image,x_lot,y_lot))
+
 def dead():
-    global game_over,death_count
+    global Count_down, game_over,death_count
+    Count_down= False
     death_count += 1
     game_over = True
 
 def restart():
     global dt , running , Jump , Dash , PlayerXto, jump_power , \
         game_start_count , xspeed, jump_power_set, able_jump,\
-        re_block_count, re_enemy_count, right_pressed, left_pressed
-    if game_start_count < game_over_count:
-        right_pressed = False
-        left_pressed =  False
-        PlayerXto = 0
-        xspeed = 0
-        player.x_lot = 325
-        player.y_lot = 400
-        Jump = False
-        jump_power = 0
-        jump_power_set =80
-        able_jump = False
-        game_start_count = game_over_count
-        re_block_count = 0
-        re_enemy_count = 0
-    for line in range(map_reading.line_count):
-        for char in range(map_reading.count_line[line]):
-            map_line = map_reading.whole_line[line]
-            map_char = map_line[char]
-            if map_char == '_':
-                pass
-            elif map_char == 'b':
-                if re_block_count < len(Blocks):
-                    Blocks[re_block_count] = (Unit(block_image,-500 + char * 50, line * 50))
-                    re_block_count += 1
-            elif map_char == 'e':
-                if re_enemy_count < len(Enemies):
-                    Enemies[re_enemy_count] = (Unit(enemy_image,-500 + char * 50, line * 50))
-                    re_enemy_count += 1
+        right_pressed, left_pressed, Blocks, Enemies, All_Units,Savepoints
+    right_pressed = False
+    left_pressed =  False
+    PlayerXto = 0
+    xspeed = 0
+    player.x_lot = 325
+    player.y_lot = 400
+    Jump = False
+    jump_power = 0
+    able_jump = False
+    Blocks = []
+    Savepoints = []
+    Enemies = []
+    All_Units = []
+
+    for unit in map_reading.map_read("jump_game_map.txt"):
+        if unit[0] == "_":
+            pass
+        elif unit [0] == "block":
+            summon_block(unit[1],unit[2])
+        elif unit [0] == "enemy":
+            summon_enemy(unit[1],unit[2])
+        elif unit [0] == "savepoint":
+            summon_savepoint(unit[1],unit[2])
+    All_Units.append((Blocks,Enemies,Savepoints))
+
 def x_move(right_pressed, left_pressed):
     global PlayerXto
     if right_pressed == left_pressed:
@@ -223,27 +225,17 @@ game_over_count = 0
 game_start_count = -1
 
 speed = 0.5
-Gravity = 1.5
+Gravity = 2
 gravity = Gravity
+jump_power_set = 80
 
 
 
 
 
 #################################################################################################
-for line in range(map_reading.line_count):
-    for char in range(map_reading.count_line[line]):
-        map_line = map_reading.whole_line[line]
-        map_char = map_line[char]
-        if map_char == '_':
-            pass
-        elif map_char == 'b':
-            summon_block(-500 + char * 50, line * 50)
-        elif map_char == 'e':
-            summon_enemy(-500 + char * 50, line * 50)
-            pass
 
-
+restart()
 
 ################################################################################################
 running = True
@@ -251,11 +243,8 @@ game_over = False
 
 
 def main():
-    restart()
     global dt, running, PlayerXto, Jump , Dash, jump_power, right_pressed, left_pressed
     dt = clock.tick(120)
-    for i in Blocks:
-        player.cant_pass(i)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -297,36 +286,51 @@ def main():
         dead()
 
     pygame.draw.rect(screen, BLACK, [0,0, screen_width,screen_height])
-    for enemy in Enemies:
-        screen.blit(enemy.image,(enemy.x_lot, enemy.y_lot))
     for block in Blocks:
         player.cant_pass(block)
-        screen.blit(block.image, (block.x_lot, block.y_lot))
+    for lists_name in All_Units:
+        for lists_value in lists_name:
+            for unit in lists_value:
+                screen.blit(unit.image, (unit.x_lot, unit.y_lot))
     screen.blit(player.image, (player.x_lot, player.y_lot))
 
 
     pygame.display.flip()
 
 def Game_Over():
-    global running , game_over_repeat , game_over_count, game_over
+    global running , game_over_repeat , game_over_count, game_over, Count_down
     if death_count > game_over_count:
+        restart()
         game_over_repeat = pygame.time.get_ticks()
         game_over_count = death_count
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.KEYDOWN:
+        elif event.type == pygame.KEYDOWN and Count_down == True:
             game_over = False
-            print (game_over == True)
     pygame.draw.rect(screen, BLACK, [0,0, screen_width,screen_height])
-    if pygame.time.get_ticks() - game_over_repeat < 500:
-        text_print.text_printing("         GAME OVER\n\n\npress any key to restart",130,330,WHITE)
+    text_print.text_printing("         GAME OVER",130,330,WHITE)
+
+
+    if pygame.time.get_ticks() - game_over_repeat <333 and Count_down == False:
+        text_print.text_printing("3",388,430,GRAY)
         pygame.display.flip()
-    elif pygame.time.get_ticks() - game_over_repeat < 1000:
-        text_print.text_printing("         GAME OVER",130,330,WHITE)
+    elif pygame.time.get_ticks() - game_over_repeat <666 and Count_down == False:
+        text_print.text_printing("2",388,430,GRAY)
+        pygame.display.flip()
+    elif pygame.time.get_ticks() - game_over_repeat <999 and Count_down == False:
+        text_print.text_printing("1",388,430,GRAY)
         pygame.display.flip()
     else:
-        game_over_repeat = pygame.time.get_ticks()
+        if pygame.time.get_ticks() - game_over_repeat < 500:
+            text_print.text_printing("press any key to restart",130,430,WHITE)
+            pygame.display.flip()
+        elif pygame.time.get_ticks() - game_over_repeat < 1000:
+            text_print.text_printing("press any key to restart",130,430,GRAY)
+            pygame.display.flip()
+        else:
+            game_over_repeat = pygame.time.get_ticks()
+            Count_down = True
 
 while running == True:
     if game_over == False:
