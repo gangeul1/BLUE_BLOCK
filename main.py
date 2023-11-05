@@ -2,6 +2,7 @@ import os
 import pygame
 import map_reading
 import text_print
+import game_manu
 
 pygame.init()
 pygame.font.init()
@@ -11,9 +12,9 @@ script_dir = os.path.dirname(__file__)
 screen_width = 800
 screen_height = 800
 screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("super_mario")
+pygame.display.set_caption("Adventure of Blue Block")
 clock = pygame.time.Clock()
-myFont = pygame.font.SysFont(None, 30)
+
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -175,10 +176,10 @@ def summon_savepoint(x_lot,y_lot):
     Savepoints.append(Unit(savepoint_image,x_lot,y_lot))
 
 def dead():
-    global Count_down, game_over,death_count
+    global Count_down, game_over,death_count,game_condition
     Count_down= False
     death_count += 1
-    game_over = True
+    game_condition = "game_over"
 
 def restart():
     global dt , running , Jump , Dash , PlayerXto, jump_power , xspeed, jump_power_set,\
@@ -222,10 +223,11 @@ def x_move(right_pressed, left_pressed):
 #################################################################################################   
 # My_Intial_Value 
 
-player_image = f"{script_dir}\images\player.png"
+player_image = f"{script_dir}\images//player.png"
 enemy_image = f"{script_dir}\images\enemy.png"
 block_image = f"{script_dir}\images//block.png"
 savepoint_image = f"{script_dir}\images//savepoint.png"
+pause_image = f"{script_dir}\images//pause.png"
 
 Blocks = []
 Enemies = []
@@ -246,15 +248,16 @@ death_count = 0
 game_over_count = 0
 
 speed = 0.5
-Gravity = 2
+Gravity = 1.9
 jump_power_set = 80
+
 
 # My_Intial_Value 
 ################################################################################################
 
 restart()
 running = True
-game_over = False
+game_condition = "manu"
 
 
 def main():
@@ -308,7 +311,7 @@ def main():
 # Unit Function
 ################################################################################################
 # Just_Fuction
-    if player.y_lot >= 750:
+    if Blocks[0].y_lot < Blocks[0].original_y - 300:
         dead()
 # Just_Fuction        
 ################################################################################################
@@ -322,12 +325,12 @@ def main():
                 screen.blit(unit.image, (unit.x_lot, unit.y_lot))
     screen.blit(player.image, (player.x_lot, player.y_lot))
 
-
+    screen.blit(pygame.image.load(pause_image),(10,10))
     pygame.display.flip()
 # Draw
 ################################################################################################
 def Game_Over():
-    global running , game_over_repeat , game_over_count, game_over, Count_down
+    global running , game_over_repeat , game_over_count, game_over, Count_down, game_condition
     if death_count > game_over_count:
         restart()
         game_over_repeat = pygame.time.get_ticks()
@@ -336,33 +339,37 @@ def Game_Over():
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN and Count_down == True:
-            game_over = False
+            game_condition = "game_playing"
     pygame.draw.rect(screen, BLACK, [0,0, screen_width,screen_height])
-    text_print.text_printing("         GAME OVER",130,330,WHITE)
+    text_print.text_printing("GAME OVER",screen_width/2 - 150,screen_height/2 -70,WHITE)
 
 
     if pygame.time.get_ticks() - game_over_repeat <333 and Count_down == False:
-        text_print.text_printing("3",388,430,GRAY)
+        text_print.text_printing("3",screen_width/2 - 13,screen_height/2 +30,GRAY)
         pygame.display.flip()
     elif pygame.time.get_ticks() - game_over_repeat <666 and Count_down == False:
-        text_print.text_printing("2",388,430,GRAY)
+        text_print.text_printing("2",screen_width/2 - 13,screen_height/2 +30,GRAY)
         pygame.display.flip()
     elif pygame.time.get_ticks() - game_over_repeat <999 and Count_down == False:
-        text_print.text_printing("1",388,430,GRAY)
+        text_print.text_printing("1",screen_width/2 - 13,screen_height/2 +30,GRAY)
         pygame.display.flip()
     else:
         if pygame.time.get_ticks() - game_over_repeat < 500:
-            text_print.text_printing("press any key to restart",130,430,WHITE)
+            text_print.text_printing("press any key to restart",screen_width/2 - 270,screen_height/2 +30,WHITE)
             pygame.display.flip()
         elif pygame.time.get_ticks() - game_over_repeat < 1000:
-            text_print.text_printing("press any key to restart",130,430,GRAY)
+            text_print.text_printing("press any key to restart",screen_width/2 - 270,screen_height/2 +30,GRAY)
             pygame.display.flip()
         else:
             game_over_repeat = pygame.time.get_ticks()
             Count_down = True
 
 while running == True:
-    if game_over == False:
+    if game_condition == "manu":
+        game_condition = game_manu.game_manu()
+    if game_condition == "game_playing":
         main()
-    if game_over == True:
+    if game_condition == "game_over":
         Game_Over()
+    if game_condition == "quit":
+        running = False
