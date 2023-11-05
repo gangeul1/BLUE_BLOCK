@@ -12,36 +12,45 @@ screen_width = 800
 screen_height = 800
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("super_mario")
-
-#################################################################################################        
-
-player_image = f"{script_dir}\images\player.png"
-enemy_image = f"{script_dir}\images\enemy.png"
-block_image = f"{script_dir}\images//block.png"
-savepoint_image = f"{script_dir}\images//savepoint.png"
-
 clock = pygame.time.Clock()
 myFont = pygame.font.SysFont(None, 30)
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-GRAY = (100, 100, 100)
+GRAY = (50, 50, 50)
+WHITE_GRAY = (100,100,100)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
+#################################################################################################        
 
-Blocks = []
-Enemies = []
-Savepoints = []
-
-
-#################################################################################################
 def scroll_move():
-    for lists_name in All_Units:
-        for lists_value in lists_name:
-            for unit in lists_value:
-                unit.x_lot -= xspeed * speed * dt
+    if player.x_lot < x_scroll_period:
+        for lists_name in All_Units:
+            for lists_value in lists_name:
+                for unit in lists_value:
+                    unit.x_lot += x_scroll_period - player.x_lot
+        player.x_lot = x_scroll_period
+    if player.x_lot > screen_width - player.width - x_scroll_period:
+        for lists_name in All_Units:
+            for lists_value in lists_name:
+                for unit in lists_value:
+                    unit.x_lot -= player.x_lot - (screen_width - player.width - x_scroll_period)
+        player.x_lot = screen_width - player.width - x_scroll_period
+    if player.y_lot < y_scroll_period:
+        for lists_name in All_Units:
+            for lists_value in lists_name:
+                for unit in lists_value:
+                    unit.y_lot += y_scroll_period - player.y_lot
+        player.y_lot = y_scroll_period
+    if player.y_lot > screen_height - player.height - y_scroll_period:
+        for lists_name in All_Units:
+            for lists_value in lists_name:
+                for unit in lists_value:
+                    unit.y_lot -= player.y_lot - (screen_height - player.height - y_scroll_period)
+        player.y_lot = screen_height - player.height - y_scroll_period
+
 class Unit:
     def __init__(self,image, x_lot, y_lot):
         self.image = pygame.image.load(image)
@@ -50,6 +59,8 @@ class Unit:
         self.height = self.size[1]
         self.x_lot = x_lot
         self.y_lot = y_lot
+        self.original_x = x_lot
+        self.original_y = y_lot
 
     def bump(self,bump_unit):
         self.rect = self.image.get_rect()
@@ -138,16 +149,10 @@ class Unit:
             
         self.x_lot += xspeed * speed * dt
 
-        if self.x_lot < 300:
-            self.x_lot = 300
-            scroll_move()
-        if self.x_lot > screen_width - self.width - 300:
-            self.x_lot = screen_width - self.width -300
-            scroll_move()
+        for block in Blocks:
+            player.cant_pass(block)
+        scroll_move()
 
-        if self.y_lot > screen_height - self.height:
-            self.y_lot = screen_height - self.height
-    
 def jump(block):
     global gravity
     gravity = Gravity
@@ -176,15 +181,14 @@ def dead():
     game_over = True
 
 def restart():
-    global dt , running , Jump , Dash , PlayerXto, jump_power , \
-        game_start_count , xspeed, jump_power_set, able_jump,\
-        right_pressed, left_pressed, Blocks, Enemies, All_Units,Savepoints
+    global dt , running , Jump , Dash , PlayerXto, jump_power , xspeed, jump_power_set,\
+          able_jump,right_pressed, left_pressed, Blocks, Enemies, All_Units,Savepoints,gravity
+    gravity = Gravity
     right_pressed = False
     left_pressed =  False
     PlayerXto = 0
     xspeed = 0
-    player.x_lot = 325
-    player.y_lot = 400
+
     Jump = False
     jump_power = 0
     able_jump = False
@@ -194,15 +198,16 @@ def restart():
     All_Units = []
 
     for unit in map_reading.map_read("jump_game_map.txt"):
-        if unit[0] == "_":
-            pass
-        elif unit [0] == "block":
+        if unit [0] == "block":
             summon_block(unit[1],unit[2])
         elif unit [0] == "enemy":
             summon_enemy(unit[1],unit[2])
         elif unit [0] == "savepoint":
             summon_savepoint(unit[1],unit[2])
     All_Units.append((Blocks,Enemies,Savepoints))
+
+    player.x_lot = player_spawnpoint[0]
+    player.y_lot = player_spawnpoint[1]
 
 def x_move(right_pressed, left_pressed):
     global PlayerXto
@@ -215,34 +220,45 @@ def x_move(right_pressed, left_pressed):
 
 
 #################################################################################################   
+# My_Intial_Value 
 
+player_image = f"{script_dir}\images\player.png"
+enemy_image = f"{script_dir}\images\enemy.png"
+block_image = f"{script_dir}\images//block.png"
+savepoint_image = f"{script_dir}\images//savepoint.png"
 
+Blocks = []
+Enemies = []
+Savepoints = []
 
-player = Unit(player_image,0,0)
+x_scroll_period = 350
+y_scroll_period = 200
+
+for unit in map_reading.map_read("jump_game_map.txt"):
+    if unit[0] == "player":
+        global Initial_player_spawnpoint
+        Initial_player_spawnpoint = [unit[1],unit[2]]
+
+player = Unit(player_image, Initial_player_spawnpoint[0],Initial_player_spawnpoint[1])
+player_spawnpoint = [Initial_player_spawnpoint[0],Initial_player_spawnpoint[1]] #초기값
 
 death_count = 0
 game_over_count = 0
-game_start_count = -1
 
 speed = 0.5
 Gravity = 2
-gravity = Gravity
 jump_power_set = 80
 
-
-
-
-
-#################################################################################################
+# My_Intial_Value 
+################################################################################################
 
 restart()
-
-################################################################################################
 running = True
 game_over = False
 
 
 def main():
+
     global dt, running, PlayerXto, Jump , Dash, jump_power, right_pressed, left_pressed
     dt = clock.tick(120)
     for event in pygame.event.get():
@@ -271,7 +287,8 @@ def main():
                 left_pressed = False
         x_move(right_pressed, left_pressed)
 
-
+################################################################################################
+# Unit Function
     for block in Blocks:
         jump(block)
     player.y_lot -= jump_power / 10
@@ -282,9 +299,20 @@ def main():
     for enemy in Enemies:
         if player.bump(enemy) == True:
             dead()
+    
+    for save in Savepoints:
+        global player_spawnpoint
+        if player.bump(save) == True:
+            player_spawnpoint = [save.original_x,save.original_y]
+            save.image = pygame.image.load(f"{script_dir}\images//savepoint2.png")
+# Unit Function
+################################################################################################
+# Just_Fuction
     if player.y_lot >= 750:
         dead()
-
+# Just_Fuction        
+################################################################################################
+# Draw
     pygame.draw.rect(screen, BLACK, [0,0, screen_width,screen_height])
     for block in Blocks:
         player.cant_pass(block)
@@ -296,7 +324,8 @@ def main():
 
 
     pygame.display.flip()
-
+# Draw
+################################################################################################
 def Game_Over():
     global running , game_over_repeat , game_over_count, game_over, Count_down
     if death_count > game_over_count:

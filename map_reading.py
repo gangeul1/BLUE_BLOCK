@@ -35,6 +35,8 @@ def map_read(map_file_name):
                     map_coordinate.append(("enemy",-500 + char * 50, line * 50))
                 elif map_char == 's':
                     map_coordinate.append(("savepoint",-500 + char * 50, line * 50))
+                elif map_char == 'P':
+                    map_coordinate.append(("player",-500 + char * 50, line * 50))
 
     map_file.close()
     return map_coordinate
