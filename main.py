@@ -2,17 +2,17 @@ import os
 import pygame
 import map_reading
 import text_print
-import game_manu
+import game_menu
 
 pygame.init()
 pygame.font.init()
 
 script_dir = os.path.dirname(__file__)
 
-screen_width = 800
-screen_height = 800
+screen_width = 1280
+screen_height = 720
 screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Adventure of Blue Block")
+pygame.display.set_caption("BLUE BLOCK")
 clock = pygame.time.Clock()
 
 
@@ -143,12 +143,15 @@ class Unit:
     def move(self,xto):
         global xspeed
         if xto == 0:
-            xspeed = xspeed * 0.90
-        xspeed += xto * 0.3
+            xspeed = xspeed * 0.8
+        xspeed += xto * 0.2
         if abs(xto * speed * dt) <= -xspeed* speed * dt and xto != 0 or xspeed* speed * dt >= abs(xto * speed * dt) and xto != 0:
             xspeed = xto
-            
-        self.x_lot += xspeed * speed * dt
+        if creep == True:
+            self.x_lot += xspeed * speed * dt * 0.5
+        else:
+            self.x_lot += xspeed * speed * dt
+       
 
         for block in Blocks:
             player.cant_pass(block)
@@ -166,15 +169,6 @@ def jump(block):
                 jump_power = jump_power_set
     
 
-def summon_block(x_lot, y_lot):
-    Blocks.append(Unit(block_image,x_lot,y_lot))
-
-def summon_enemy(x_lot, y_lot):
-    Enemies.append(Unit(enemy_image,x_lot,y_lot))
-
-def summon_savepoint(x_lot,y_lot):
-    Savepoints.append(Unit(savepoint_image,x_lot,y_lot))
-
 def dead():
     global Count_down, game_over,death_count,game_condition
     Count_down= False
@@ -182,30 +176,36 @@ def dead():
     game_condition = "game_over"
 
 def restart():
-    global dt , running , Jump , Dash , PlayerXto, jump_power , xspeed, jump_power_set,\
-          able_jump,right_pressed, left_pressed, Blocks, Enemies, All_Units,Savepoints,gravity
+    global dt , running , Jump  , PlayerXto, jump_power , xspeed, jump_power_set,\
+          able_jump,right_pressed, left_pressed, Blocks, Enemies, All_Units,Savepoints,gravity,creep,Goals, player_spawnpoint
+    
+    
     gravity = Gravity
     right_pressed = False
     left_pressed =  False
+    creep = False
+    Jump = False
     PlayerXto = 0
     xspeed = 0
 
-    Jump = False
     jump_power = 0
     able_jump = False
     Blocks = []
     Savepoints = []
     Enemies = []
     All_Units = []
+    Goals = []
 
-    for unit in map_reading.map_read("jump_game_map.txt"):
+    for unit in map_reading.map_read(map_file):
         if unit [0] == "block":
-            summon_block(unit[1],unit[2])
+            Blocks.append(Unit(block_image,unit[1],unit[2]))
         elif unit [0] == "enemy":
-            summon_enemy(unit[1],unit[2])
+            Enemies.append(Unit(enemy_image,unit[1],unit[2]))
         elif unit [0] == "savepoint":
-            summon_savepoint(unit[1],unit[2])
-    All_Units.append((Blocks,Enemies,Savepoints))
+            Savepoints.append(Unit(savepoint_image,unit[1],unit[2]))
+        elif unit [0] == "goal":
+            Goals.append(Unit(goal_image,unit[1],unit[2]))
+    All_Units.append((Blocks,Enemies,Savepoints,Goals))
 
     player.x_lot = player_spawnpoint[0]
     player.y_lot = player_spawnpoint[1]
@@ -223,26 +223,26 @@ def x_move(right_pressed, left_pressed):
 #################################################################################################   
 # My_Intial_Value 
 
+map_file = os.listdir(f"{script_dir}//maps")[0]
+
 player_image = f"{script_dir}\images//player.png"
 enemy_image = f"{script_dir}\images\enemy.png"
 block_image = f"{script_dir}\images//block.png"
 savepoint_image = f"{script_dir}\images//savepoint.png"
 pause_image = f"{script_dir}\images//pause.png"
+goal_image = f"{script_dir}\images//goal.png"    
+
+player = Unit(player_image, 0,0)
 
 Blocks = []
 Enemies = []
 Savepoints = []
+Goals = []
 
-x_scroll_period = 350
+x_scroll_period = 600
 y_scroll_period = 200
 
-for unit in map_reading.map_read("jump_game_map.txt"):
-    if unit[0] == "player":
-        global Initial_player_spawnpoint
-        Initial_player_spawnpoint = [unit[1],unit[2]]
-
-player = Unit(player_image, Initial_player_spawnpoint[0],Initial_player_spawnpoint[1])
-player_spawnpoint = [Initial_player_spawnpoint[0],Initial_player_spawnpoint[1]] #초기값
+player_spawnpoint = (0,0)
 
 death_count = 0
 game_over_count = 0
@@ -257,12 +257,12 @@ jump_power_set = 80
 
 restart()
 running = True
-game_condition = "manu"
+game_condition = "menu"
 
 
 def main():
 
-    global dt, running, PlayerXto, Jump , Dash, jump_power, right_pressed, left_pressed
+    global dt, running, PlayerXto, Jump , jump_power, right_pressed, left_pressed,click, game_condition,creep
     dt = clock.tick(120)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -271,24 +271,47 @@ def main():
             if event.key == pygame.K_UP or event.key == pygame.K_w:
                 Jump = True
             if event.key == pygame.K_DOWN or event.key == pygame.K_s:
-                Dash = True
+                creep = True
             if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
                 right_pressed = True
             if event.key == pygame.K_LEFT or event.key == pygame.K_a:
                 left_pressed = True
+            if event.key == pygame.K_ESCAPE:
+                if PlayerXto == 0:
+                    game_condition = "pause"
+
 
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_UP or event.key == pygame.K_w:
                 Jump = False
             if event.key == pygame.K_DOWN or event.key == pygame.K_s:
-                Dash = False
+                creep = False
             if event.key == pygame.K_RIGHT and right_pressed == True\
                 or event.key == pygame.K_d and right_pressed == True:
                 right_pressed = False
             if event.key == pygame.K_LEFT and left_pressed == True\
                 or event.key == pygame.K_a and left_pressed == True:
                 left_pressed = False
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            click = True
+        if event.type == pygame.MOUSEBUTTONUP:
+            click = False
         x_move(right_pressed, left_pressed)
+
+    pos = pygame.mouse.get_pos()
+    global dont_draw_pause
+    if PlayerXto == 0:
+        dont_draw_pause = False
+        if 10 < pos[0] < 60 and 10 < pos[1] < 60:
+            pause_image = f"{script_dir}\images//pause2.png"
+            if click == True:
+                game_condition = "pause"
+                pause_image = f"{script_dir}\images//pause.png"
+        else:
+            pause_image = f"{script_dir}\images//pause.png"
+    else:
+        dont_draw_pause = True
 
 ################################################################################################
 # Unit Function
@@ -302,6 +325,12 @@ def main():
     for enemy in Enemies:
         if player.bump(enemy) == True:
             dead()
+    
+    for goal in Goals:
+        global clear_repeat
+        if player.bump(goal) == True:
+            game_condition = "clear"
+            clear_repeat = pygame.time.get_ticks()
     
     for save in Savepoints:
         global player_spawnpoint
@@ -325,7 +354,8 @@ def main():
                 screen.blit(unit.image, (unit.x_lot, unit.y_lot))
     screen.blit(player.image, (player.x_lot, player.y_lot))
 
-    screen.blit(pygame.image.load(pause_image),(10,10))
+    if dont_draw_pause == False:
+        screen.blit(pygame.image.load(pause_image),(10,10))
     pygame.display.flip()
 # Draw
 ################################################################################################
@@ -339,37 +369,68 @@ def Game_Over():
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN and Count_down == True:
-            game_condition = "game_playing"
+            restart()
+            game_condition = "continue"
     pygame.draw.rect(screen, BLACK, [0,0, screen_width,screen_height])
     text_print.text_printing("GAME OVER",screen_width/2 - 150,screen_height/2 -70,WHITE)
+    time =  pygame.time.get_ticks() - game_over_repeat
 
-
-    if pygame.time.get_ticks() - game_over_repeat <333 and Count_down == False:
+    if time <333 and Count_down == False:
         text_print.text_printing("3",screen_width/2 - 13,screen_height/2 +30,GRAY)
         pygame.display.flip()
-    elif pygame.time.get_ticks() - game_over_repeat <666 and Count_down == False:
+    elif time <666 and Count_down == False:
         text_print.text_printing("2",screen_width/2 - 13,screen_height/2 +30,GRAY)
         pygame.display.flip()
-    elif pygame.time.get_ticks() - game_over_repeat <999 and Count_down == False:
+    elif time <999 and Count_down == False:
         text_print.text_printing("1",screen_width/2 - 13,screen_height/2 +30,GRAY)
         pygame.display.flip()
     else:
-        if pygame.time.get_ticks() - game_over_repeat < 500:
+        if time < 500:
             text_print.text_printing("press any key to restart",screen_width/2 - 270,screen_height/2 +30,WHITE)
             pygame.display.flip()
-        elif pygame.time.get_ticks() - game_over_repeat < 1000:
+        elif time < 1000:
             text_print.text_printing("press any key to restart",screen_width/2 - 270,screen_height/2 +30,GRAY)
             pygame.display.flip()
         else:
             game_over_repeat = pygame.time.get_ticks()
             Count_down = True
 
+def clear():
+    global game_condition
+    time = pygame.time.get_ticks() - clear_repeat 
+    if time < 1000:
+        screen.blit(pygame.image.load(f"{script_dir}//images//clear.png"),(0,0))
+        pygame.display.flip()
+    else:
+        game_condition = "menu"
+
+
 while running == True:
-    if game_condition == "manu":
-        game_condition = game_manu.game_manu()
-    if game_condition == "game_playing":
-        main()
+    if game_condition == "menu":
+        game_condition = game_menu.start_menu()
+    if game_condition == "game_restart":
+        for unit in map_reading.map_read(map_file):
+            if unit[0] == "player":
+                global Initial_player_spawnpoint
+                Initial_player_spawnpoint = [unit[1],unit[2]]
+        player_spawnpoint = [Initial_player_spawnpoint[0],Initial_player_spawnpoint[1]]
+        restart()
+        game_condition = "continue"
     if game_condition == "game_over":
         Game_Over()
     if game_condition == "quit":
         running = False
+    if game_condition == "pause":
+        right_pressed = False
+        left_pressed =  False
+        creep = False
+        Jump = False
+        game_condition = game_menu.pause()
+    if game_condition == "continue":
+        main()
+    if game_condition == "stage":
+        results = game_menu.stage(map_file)
+        map_file = results[0]
+        game_condition = results[1]
+    if game_condition == "clear":
+        clear()

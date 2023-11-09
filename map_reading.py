@@ -2,7 +2,7 @@ def map_read(map_file_name):
     import os
     script_dir = os.path.dirname(__file__)
 
-    map_file = open(f"{script_dir}/{map_file_name}", 'r')
+    map_file = open(f"{script_dir}/maps/{map_file_name}", 'r')
     lines = map_file.readlines()
     line_count = 0
     global a_line
@@ -37,6 +37,8 @@ def map_read(map_file_name):
                     map_coordinate.append(("savepoint",-500 + char * 50, line * 50))
                 elif map_char == 'P':
                     map_coordinate.append(("player",-500 + char * 50, line * 50))
+                elif map_char == "g":
+                    map_coordinate.append(("goal",-500 + char * 50, line * 50))
 
     map_file.close()
     return map_coordinate
