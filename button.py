@@ -10,6 +10,7 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 
 click = False
 
+
 class button:
     def __init__(self,sx,sy,image_name,image_name2):
         self.image_name = f"{script_dir}//images//{image_name}"
@@ -23,6 +24,7 @@ class button:
         self.sy = sy
         self.fx = self.sx + self.width
         self.fy = self.sy + self.height
+        self.last_click = 0
 
 
     def button_work(self,click):

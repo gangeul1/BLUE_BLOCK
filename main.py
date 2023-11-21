@@ -143,8 +143,8 @@ class Unit:
     def move(self,xto):
         global xspeed
         if xto == 0:
-            xspeed = xspeed * 0.8
-        xspeed += xto * 0.2
+            xspeed = xspeed * slide1
+        xspeed += xto * slide2
         if abs(xto * speed * dt) <= -xspeed* speed * dt and xto != 0 or xspeed* speed * dt >= abs(xto * speed * dt) and xto != 0:
             xspeed = xto
         if creep == True:
@@ -221,35 +221,56 @@ def x_move(right_pressed, left_pressed):
 
 
 #################################################################################################   
-# My_Intial_Value 
+# My_Intial_Value -> def game_setting
 
+play_mode = 0
 map_file = os.listdir(f"{script_dir}//maps")[0]
+def game_setting(play_mode):
+    global map_file,player_image,enemy_image,block_image,savepoint_image,pause_image,goal_image,player,Blocks,Enemies,Savepoints,Goals,x_scroll_period,y_scroll_period,player_spawnpoint,death_count,game_over_count,speed,Gravity,jump_power_set,bend,slide1,slide2
+    player_image = f"{script_dir}\images//player{play_mode}.png"
+    enemy_image = f"{script_dir}\images\enemy.png"
+    block_image = f"{script_dir}\images//block.png"
+    savepoint_image = f"{script_dir}\images//savepoint.png"
+    pause_image = f"{script_dir}\images//pause.png"
+    goal_image = f"{script_dir}\images//goal.png"
+    if play_mode ==  3:
+        player_image = f"{script_dir}\images//block.png"
+        enemy_image = f"{script_dir}\images//block.png"
+        block_image = f"{script_dir}\images//block.png"
+        savepoint_image = f"{script_dir}\images//block.png"
+        pause_image = f"{script_dir}\images//block.png"
+        goal_image = f"{script_dir}\images//block.png"
+    player = Unit(player_image, 0,0)
+    Blocks = []
+    Enemies = []
+    Savepoints = []
+    Goals = []
+    x_scroll_period = 600
+    y_scroll_period = 200
+    player_spawnpoint = (0,0)
+    death_count = 0
+    game_over_count = 0
+    speed = 0.5
+    Gravity = 1.9
+    jump_power_set = 80
+    if play_mode == 1:
+        bend = 1
+    else:
+        bend = 0
 
-player_image = f"{script_dir}\images//player.png"
-enemy_image = f"{script_dir}\images\enemy.png"
-block_image = f"{script_dir}\images//block.png"
-savepoint_image = f"{script_dir}\images//savepoint.png"
-pause_image = f"{script_dir}\images//pause.png"
-goal_image = f"{script_dir}\images//goal.png"    
+    if play_mode == 4:
+        jump_power_set = 150
+        Gravity =3
+        speed = 2
+    
+    slide1 =0.8
+    slide2 =0.2
+    if play_mode == 5:
+        slide1 = 0.97
+        slide2 = 0.03
 
-player = Unit(player_image, 0,0)
 
-Blocks = []
-Enemies = []
-Savepoints = []
-Goals = []
-
-x_scroll_period = 600
-y_scroll_period = 200
-
-player_spawnpoint = (0,0)
-
-death_count = 0
-game_over_count = 0
-
-speed = 0.5
-Gravity = 1.9
-jump_power_set = 80
+game_setting(play_mode)
 
 
 # My_Intial_Value 
@@ -340,7 +361,7 @@ def main():
 # Unit Function
 ################################################################################################
 # Just_Fuction
-    if Blocks[0].y_lot < Blocks[0].original_y - 300:
+    if Blocks[0].y_lot < Blocks[0].original_y -1000:
         dead()
 # Just_Fuction        
 ################################################################################################
@@ -351,7 +372,11 @@ def main():
     for lists_name in All_Units:
         for lists_value in lists_name:
             for unit in lists_value:
-                screen.blit(unit.image, (unit.x_lot, unit.y_lot))
+                if play_mode == 2:
+                    if player.x_lot-200 <unit.x_lot<player.x_lot +200 and  player.y_lot-200 <unit.y_lot<player.y_lot +200:
+                        screen.blit(unit.image, (unit.x_lot, unit.y_lot + bend * abs(player.x_lot - unit.x_lot) * 0.2))
+                else:
+                    screen.blit(unit.image, (unit.x_lot, unit.y_lot + bend * abs(player.x_lot - unit.x_lot) * 0.2))
     screen.blit(player.image, (player.x_lot, player.y_lot))
 
     if dont_draw_pause == False:
@@ -434,3 +459,7 @@ while running == True:
         game_condition = results[1]
     if game_condition == "clear":
         clear()
+    if game_condition == "play_mode":
+        game_condition = game_menu.play_mode()[0]
+        play_mode = game_menu.play_mode()[1]
+        game_setting(play_mode)
