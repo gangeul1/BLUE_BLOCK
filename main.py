@@ -24,6 +24,7 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
+death_count = 0
 #################################################################################################        
 
 def scroll_move():
@@ -170,9 +171,9 @@ def jump(block):
     
 
 def dead():
-    global Count_down, game_over,death_count,game_condition
-    Count_down= False
-    death_count += 1
+    global game_over_count,death_count,game_condition
+    if death_count == game_over_count:
+        death_count += 1
     game_condition = "game_over"
 
 def restart():
@@ -248,26 +249,31 @@ def game_setting(play_mode):
     x_scroll_period = 600
     y_scroll_period = 200
     player_spawnpoint = (0,0)
-    death_count = 0
     game_over_count = 0
     speed = 0.5
-    Gravity = 1.9
-    jump_power_set = 80
+    Gravity = 2.3
+    jump_power_set = 90
     if play_mode == 1:
         bend = 1
     else:
         bend = 0
-
-    if play_mode == 4:
-        jump_power_set = 150
-        Gravity =3
-        speed = 2
+    game_over_count = death_count
     
     slide1 =0.8
     slide2 =0.2
     if play_mode == 5:
         slide1 = 0.97
         slide2 = 0.03
+        Gravity = 1.2
+        speed = 0.6
+        jump_power_set = 65
+    if play_mode == 4:
+        jump_power_set = 160
+        Gravity =3
+        speed = 3
+        slide1 = 0.8
+        slide2 = 0.03
+        
 
 
 game_setting(play_mode)
@@ -278,7 +284,8 @@ game_setting(play_mode)
 
 restart()
 running = True
-game_condition = "menu"
+game_condition = "play_mode"
+stage_point = 300
 
 
 def main():
@@ -373,61 +380,84 @@ def main():
         for lists_value in lists_name:
             for unit in lists_value:
                 if play_mode == 2:
-                    if player.x_lot-200 <unit.x_lot<player.x_lot +200 and  player.y_lot-200 <unit.y_lot<player.y_lot +200:
-                        screen.blit(unit.image, (unit.x_lot, unit.y_lot + bend * abs(player.x_lot - unit.x_lot) * 0.2))
+                    if 300 >= abs(player.y_lot-unit.y_lot)+abs(player.x_lot-unit.x_lot):
+                        screen.blit(unit.image, (unit.x_lot, unit.y_lot + bend * abs(player.x_lot - unit.x_lot) * 0.3))
                 else:
-                    screen.blit(unit.image, (unit.x_lot, unit.y_lot + bend * abs(player.x_lot - unit.x_lot) * 0.2))
+                    screen.blit(unit.image, (unit.x_lot, unit.y_lot + bend * abs(player.x_lot - unit.x_lot) * 0.3))
     screen.blit(player.image, (player.x_lot, player.y_lot))
 
     if dont_draw_pause == False:
         screen.blit(pygame.image.load(pause_image),(10,10))
+    text_print.text_printing(f"Death Count : {death_count}",870,20,WHITE)
     pygame.display.flip()
 # Draw
 ################################################################################################
 def Game_Over():
-    global running , game_over_repeat , game_over_count, game_over, Count_down, game_condition
+    global running , game_over_repeat , game_over_count, game_condition
     if death_count > game_over_count:
         restart()
         game_over_repeat = pygame.time.get_ticks()
         game_over_count = death_count
+    time =  pygame.time.get_ticks() - game_over_repeat
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.KEYDOWN and Count_down == True:
+        elif (event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN) and time > 1333:
             restart()
             game_condition = "continue"
     pygame.draw.rect(screen, BLACK, [0,0, screen_width,screen_height])
-    text_print.text_printing("GAME OVER",screen_width/2 - 150,screen_height/2 -70,WHITE)
-    time =  pygame.time.get_ticks() - game_over_repeat
+    screen.blit(pygame.image.load(f"{script_dir}//images//gameover.png"),(0,0))
+    
+    the_score = stage_point - death_count * 100
+    if the_score < 0:
+        the_score = 0
 
-    if time <333 and Count_down == False:
-        text_print.text_printing("3",screen_width/2 - 13,screen_height/2 +30,GRAY)
-        pygame.display.flip()
-    elif time <666 and Count_down == False:
-        text_print.text_printing("2",screen_width/2 - 13,screen_height/2 +30,GRAY)
-        pygame.display.flip()
-    elif time <999 and Count_down == False:
-        text_print.text_printing("1",screen_width/2 - 13,screen_height/2 +30,GRAY)
-        pygame.display.flip()
-    else:
-        if time < 500:
-            text_print.text_printing("press any key to restart",screen_width/2 - 270,screen_height/2 +30,WHITE)
-            pygame.display.flip()
-        elif time < 1000:
-            text_print.text_printing("press any key to restart",screen_width/2 - 270,screen_height/2 +30,GRAY)
-            pygame.display.flip()
-        else:
-            game_over_repeat = pygame.time.get_ticks()
-            Count_down = True
+    if time >= 333:
+        text_print.text_printing(f"{stage_point}P",380,158,WHITE)
+    if time >= 666:
+        text_print.text_printing(f"{death_count}",380,250,WHITE)
+    if time >= 1000:
+        text_print.text_printing(f"{the_score}P",380,350,YELLOW)
+    if 1333 <= time < 1833:
+        text_print.text_printing("press any key to restart",screen_width/2 - 270,screen_height/2 +200,WHITE)
+    if 1833 <= time < 2333:
+        text_print.text_printing("press any key to restart",screen_width/2 - 270,screen_height/2 +200,GRAY)
+    if time >= 2333:
+        game_over_repeat = pygame.time.get_ticks() -1333
+    pygame.display.flip()
 
 def clear():
-    global game_condition
+    global game_condition,running,clear_repeat, death_count, game_over_count
+    the_score = stage_point - death_count * 100
+    if the_score <0:
+        the_score =0
     time = pygame.time.get_ticks() - clear_repeat 
-    if time < 1000:
-        screen.blit(pygame.image.load(f"{script_dir}//images//clear.png"),(0,0))
-        pygame.display.flip()
-    else:
-        game_condition = "menu"
+    screen.blit(pygame.image.load(f"{script_dir}//images//clear.png"),(0,0))
+    if time >= 333:
+        text_print.text_printing(f"{stage_point}P",420,screen_height/2+5,WHITE)
+    if time >= 666:
+        text_print.text_printing(f"-{death_count * 100}P",420,screen_height/2 +67,WHITE)
+    if time >= 1000:
+        if play_mode == 4:
+            text_print.text_printing(f"play mode is not basic -> 0P",420,screen_height/2 +210,RED)
+        else:
+            text_print.text_printing(f"{the_score}P",420,screen_height/2 +210,YELLOW)
+    if 1000 <= time < 1500:
+        text_print.text_printing("Call the staff",screen_width/2+300,screen_height/2 +300,WHITE)
+    if 1500 <= time < 2000:
+        text_print.text_printing("Call the staff",screen_width/2+300,screen_height/2 +300,GRAY)
+    if time >= 2000:
+        clear_repeat = pygame.time.get_ticks() -1000
+    pygame.display.flip()
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.KEYDOWN:
+            if (event.key == pygame.K_1):
+                game_condition = "menu"
+                death_count = 0
+                game_over_count = 0
 
 
 while running == True:
@@ -457,6 +487,12 @@ while running == True:
         results = game_menu.stage(map_file)
         map_file = results[0]
         game_condition = results[1]
+        if results[2] == 0:
+            stage_point = 300
+        if results[2] == 1:
+            stage_point = 500
+        if results[2] == 2:
+            stage_point = 2000
     if game_condition == "clear":
         clear()
     if game_condition == "play_mode":
