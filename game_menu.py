@@ -142,10 +142,12 @@ def stage(map_file):
 
 left_arrow_button = button.button(300,580,"left_arrow1.png","left_arrow2.png")
 right_arrow_button = button.button(920,580,"right_arrow1.png","right_arrow2.png")
+select_button = button.button(screen_width/2 -210,620,"button.png","button2.png")
 
 def play_mode():
     global click,temp1,temp2, setting,result
     pygame.draw.rect(screen, (0,0,0), [0,0, screen_width,screen_height])
+    screen.blit(pygame.image.load(f"{script_dir}\images//setting{setting}.png"),(screen_width/2-220,0))
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             return "quit",setting
@@ -173,11 +175,11 @@ def play_mode():
         result = "play_mode"
         temp1 = 1
         temp2 = 1
-    if quit3_button.button_work(click) == True:
+    if select_button.button_work(click) == True:
         result = "menu"
-    screen.blit(pygame.image.load(f"{script_dir}\images//setting{setting}.png"),(screen_width/2-220,0))
+    
 
-    text_print.text_printing("MENU",33,35,(255,255,255),None,60)
+    text_print.text_printing("SELECT",screen_width/2 -80,645,(255,255,255),None,60)
     if setting == 4:
         text_print.text_printing("In this mode, you can't earn the points.",screen_width/2-120,screen_height-160,(255,0,0),None,20)
     pygame.display.flip()

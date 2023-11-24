@@ -25,6 +25,9 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
 death_count = 0
+temp = 0
+temp1 = 0
+temp2 = 0
 #################################################################################################        
 
 def scroll_move():
@@ -52,6 +55,8 @@ def scroll_move():
                 for unit in lists_value:
                     unit.y_lot -= player.y_lot - (screen_height - player.height - y_scroll_period)
         player.y_lot = screen_height - player.height - y_scroll_period
+
+
 
 class Unit:
     def __init__(self,image, x_lot, y_lot):
@@ -142,21 +147,26 @@ class Unit:
 
 
     def move(self,xto):
-        global xspeed
-        if xto == 0:
-            xspeed = xspeed * slide1
-        xspeed += xto * slide2
-        if abs(xto * speed * dt) <= -xspeed* speed * dt and xto != 0 or xspeed* speed * dt >= abs(xto * speed * dt) and xto != 0:
-            xspeed = xto
-        if creep == True:
-            self.x_lot += xspeed * speed * dt * 0.5
-        else:
-            self.x_lot += xspeed * speed * dt
-       
+        global xspeed,temp
+        if game_condition == "pause":
+            temp = xspeed
+            xspeed = 0
+        if game_condition == "continue":
+            if xto == 0:
+                    xspeed = xspeed * slide1
+            xspeed += xto * slide2
+            if abs(xto * speed * dt) <= -xspeed* speed * dt and xto != 0 or xspeed* speed * dt >= abs(xto * speed * dt) and xto != 0:
+                xspeed = xto
+            if creep == True:
+                self.x_lot += xspeed * speed * dt * 0.5
+            else:
+                self.x_lot += xspeed * speed * dt
 
-        for block in Blocks:
-            player.cant_pass(block)
-        scroll_move()
+
+            for block in Blocks:
+                player.cant_pass(block)
+            scroll_move()
+
 
 def jump(block):
     global gravity
@@ -285,12 +295,18 @@ game_setting(play_mode)
 restart()
 running = True
 game_condition = "play_mode"
-stage_point = 300
+stage_point = 1000
+pause_continue_time = 0
 
 
 def main():
+    global dt, running, PlayerXto, Jump , jump_power, right_pressed, left_pressed,click, game_condition,creep,xspeed,temp1
+    
+    if pygame.time.get_ticks() - pause_continue_time >= 1:
+        if temp1 == temp2:
+            xspeed = temp 
+            temp1 += 1
 
-    global dt, running, PlayerXto, Jump , jump_power, right_pressed, left_pressed,click, game_condition,creep
     dt = clock.tick(120)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -345,8 +361,8 @@ def main():
 # Unit Function
     for block in Blocks:
         jump(block)
-    player.y_lot -= jump_power / 10
-    jump_power -= gravity
+    player.y_lot -= jump_power / 10 * dt /8
+    jump_power -= gravity * dt /8
     
     player.move(PlayerXto)
 
@@ -393,7 +409,11 @@ def main():
 # Draw
 ################################################################################################
 def Game_Over():
-    global running , game_over_repeat , game_over_count, game_condition
+    global running , game_over_repeat ,dt, game_over_count, game_condition, right_pressed, left_pressed,creep,Jump
+    right_pressed = False
+    left_pressed =  False
+    creep = False
+    Jump = False
     if death_count > game_over_count:
         restart()
         game_over_repeat = pygame.time.get_ticks()
@@ -402,9 +422,10 @@ def Game_Over():
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif (event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN) and time > 1333:
+        elif (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE or event.type == pygame.MOUSEBUTTONDOWN) and time > 1333:
             restart()
             game_condition = "continue"
+            dt = 0
     pygame.draw.rect(screen, BLACK, [0,0, screen_width,screen_height])
     screen.blit(pygame.image.load(f"{script_dir}//images//gameover.png"),(0,0))
     
@@ -417,11 +438,14 @@ def Game_Over():
     if time >= 666:
         text_print.text_printing(f"{death_count}",380,250,WHITE)
     if time >= 1000:
-        text_print.text_printing(f"{the_score}P",380,350,YELLOW)
+        if play_mode == 4:
+            text_print.text_printing(f"You cant earn POINTS in this mode",380,350,RED)
+        else:
+            text_print.text_printing(f"{the_score}P",380,350,YELLOW)
     if 1333 <= time < 1833:
-        text_print.text_printing("press any key to restart",screen_width/2 - 270,screen_height/2 +200,WHITE)
+        text_print.text_printing("press Space Bar to restart",screen_width/2 - 300,screen_height/2 +200,WHITE)
     if 1833 <= time < 2333:
-        text_print.text_printing("press any key to restart",screen_width/2 - 270,screen_height/2 +200,GRAY)
+        text_print.text_printing("press Space Bar to restart",screen_width/2 - 300,screen_height/2 +200,GRAY)
     if time >= 2333:
         game_over_repeat = pygame.time.get_ticks() -1333
     pygame.display.flip()
@@ -439,13 +463,13 @@ def clear():
         text_print.text_printing(f"-{death_count * 100}P",420,screen_height/2 +67,WHITE)
     if time >= 1000:
         if play_mode == 4:
-            text_print.text_printing(f"play mode is not basic -> 0P",420,screen_height/2 +210,RED)
+            text_print.text_printing(f"You cant earn POINTS in this mode",420,screen_height/2 +210,RED)
         else:
             text_print.text_printing(f"{the_score}P",420,screen_height/2 +210,YELLOW)
     if 1000 <= time < 1500:
-        text_print.text_printing("Call the staff",screen_width/2+300,screen_height/2 +300,WHITE)
+        text_print.text_printing("Call the staff",screen_width/2+300,screen_height/2 +260,WHITE)
     if 1500 <= time < 2000:
-        text_print.text_printing("Call the staff",screen_width/2+300,screen_height/2 +300,GRAY)
+        text_print.text_printing("Call the staff",screen_width/2+300,screen_height/2 +260,GRAY)
     if time >= 2000:
         clear_repeat = pygame.time.get_ticks() -1000
     pygame.display.flip()
@@ -472,7 +496,12 @@ while running == True:
         restart()
         game_condition = "continue"
     if game_condition == "game_over":
+        right_pressed = False
+        left_pressed =  False
+        creep = False
+        Jump = False
         Game_Over()
+        xspeed = 0
     if game_condition == "quit":
         running = False
     if game_condition == "pause":
@@ -481,6 +510,9 @@ while running == True:
         creep = False
         Jump = False
         game_condition = game_menu.pause()
+        if game_condition == "continue":
+            pause_continue_time  = pygame.time.get_ticks()
+            temp2 += 1
     if game_condition == "continue":
         main()
     if game_condition == "stage":
@@ -488,11 +520,11 @@ while running == True:
         map_file = results[0]
         game_condition = results[1]
         if results[2] == 0:
-            stage_point = 300
+            stage_point = 1000
         if results[2] == 1:
-            stage_point = 500
-        if results[2] == 2:
             stage_point = 2000
+        if results[2] == 2:
+            stage_point = 5000
     if game_condition == "clear":
         clear()
     if game_condition == "play_mode":
