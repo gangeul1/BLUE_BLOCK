@@ -237,7 +237,7 @@ def x_move(right_pressed, left_pressed):
 play_mode = 0
 map_file = os.listdir(f"{script_dir}//maps")[0]
 def game_setting(play_mode):
-    global map_file,player_image,enemy_image,block_image,savepoint_image,pause_image,goal_image,player,Blocks,Enemies,Savepoints,Goals,x_scroll_period,y_scroll_period,player_spawnpoint,death_count,game_over_count,speed,Gravity,jump_power_set,bend,slide1,slide2
+    global map_file,player_image,enemy_image,block_image,savepoint_image,pause_image,goal_image,player,Blocks,Enemies,Savepoints,Goals,x_scroll_period,y_scroll_period,player_spawnpoint,death_count,game_over_count,speed,Gravity,jump_power_set,slide1,slide2
     player_image = f"{script_dir}\images//player{play_mode}.png"
     enemy_image = f"{script_dir}\images\enemy.png"
     block_image = f"{script_dir}\images//block.png"
@@ -263,10 +263,6 @@ def game_setting(play_mode):
     speed = 0.5
     Gravity = 2.3
     jump_power_set = 90
-    if play_mode == 1:
-        bend = 1
-    else:
-        bend = 0
     game_over_count = death_count
     
     slide1 =0.8
@@ -283,6 +279,7 @@ def game_setting(play_mode):
         speed = 3
         slide1 = 0.8
         slide2 = 0.03
+
         
 
 
@@ -397,9 +394,16 @@ def main():
             for unit in lists_value:
                 if play_mode == 2:
                     if 300 >= abs(player.y_lot-unit.y_lot)+abs(player.x_lot-unit.x_lot):
-                        screen.blit(unit.image, (unit.x_lot, unit.y_lot + bend * abs(player.x_lot - unit.x_lot) * 0.3))
+                        screen.blit(unit.image, (unit.x_lot, unit.y_lot))
+                elif play_mode == 1:
+                    if abs(unit.x_lot - player.x_lot) < 75:
+                        screen.blit(unit.image, (unit.x_lot, unit.y_lot))
+                    elif abs(unit.x_lot - player.x_lot) < 300:
+                        screen.blit(unit.image, (unit.x_lot, unit.y_lot + abs(player.x_lot - unit.x_lot) * 0.3-20))
+                    else:
+                        screen.blit(unit.image, (unit.x_lot, unit.y_lot + abs(player.x_lot - unit.x_lot) * 0.8-170))
                 else:
-                    screen.blit(unit.image, (unit.x_lot, unit.y_lot + bend * abs(player.x_lot - unit.x_lot) * 0.3))
+                    screen.blit(unit.image, (unit.x_lot, unit.y_lot))
     screen.blit(player.image, (player.x_lot, player.y_lot))
 
     if dont_draw_pause == False:
